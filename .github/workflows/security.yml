@@ -56,11 +56,8 @@ jobs:
               "MAC-like identifier": re.compile(
                   r"(?i)(?:[0-9a-f]{2}[:-]){5}[0-9a-f]{2}"
               ),
-              "assigned credential": re.compile(
-                  r"(?i)(?:password|passwd|token|api[_-]?key|secret)"
-                  r"\s*[:=]\s*['\"]?[A-Za-z0-9_./+=-]{12,}"
-              ),
               "Home Assistant bearer token": re.compile(r"eyJ[\w-]+\.eyJ[\w-]+\.[\w-]+"),
+              "known service token": re.compile(r"(?:gh[opusr]_[A-Za-z0-9_]{20,}|sk-[A-Za-z0-9_-]{20,})"),
               "private IPv4 address": re.compile(
                   r"(?<![\d.])(?:10\.\d{1,3}\.\d{1,3}\.\d{1,3}|"
                   r"192\.168\.\d{1,3}\.\d{1,3}|"

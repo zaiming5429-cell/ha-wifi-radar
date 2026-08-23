@@ -40,9 +40,13 @@ class Passage:
 class RadarState:
     """Bounded, thread-safe projection of the collector JSON."""
 
-    def __init__(self, source: Path, stale_seconds: float) -> None:
+    def __init__(self, source: Path, stale_seconds: float, start_score: float = 45.0, end_score: float = 35.0, start_samples: int = 2, end_samples: int = 3) -> None:
         self.source = source
         self.stale_seconds = stale_seconds
+        self.start_score = start_score
+        self.end_score = end_score
+        self.start_samples = start_samples
+        self.end_samples = end_samples
         self.lock = threading.Lock()
         self.source_data: dict[str, Any] = {}
         self.source_error: str | None = "not_loaded"
@@ -87,10 +91,10 @@ class RadarState:
         baseline = data.get("baseline")
         baseline_mean = _number(baseline.get("mean_dbm"), rssi) if isinstance(baseline, dict) else rssi
 
-        self.high_streak = self.high_streak + 1 if score >= 45.0 else 0
-        self.low_streak = self.low_streak + 1 if score < 35.0 else 0
+        self.high_streak = self.high_streak + 1 if score >= self.start_score else 0
+        self.low_streak = self.low_streak + 1 if score < self.end_score else 0
 
-        if self.active_passage is None and self.high_streak >= 2:
+        if self.active_passage is None and self.high_streak >= self.start_samples:
             self.active_passage = Passage(started_at=timestamp)
             self.passage_count += 1
 
@@ -105,7 +109,7 @@ class RadarState:
         if start_epoch is not None and current_epoch is not None:
             passage.duration_seconds = max(0.0, current_epoch - start_epoch)
 
-        if self.low_streak >= 3:
+        if self.low_streak >= self.end_samples:
             passage.ended_at = timestamp
             self.last_passage = passage
             self.active_passage = None
@@ -222,12 +226,16 @@ def main() -> None:
     parser.add_argument("--port", type=int, default=8765)
     parser.add_argument("--poll-seconds", type=float, default=1.0)
     parser.add_argument("--stale-seconds", type=float, default=10.0)
+    parser.add_argument("--start-score", type=float, default=45.0)
+    parser.add_argument("--end-score", type=float, default=35.0)
+    parser.add_argument("--start-samples", type=int, default=2)
+    parser.add_argument("--end-samples", type=int, default=3)
     args = parser.parse_args()
-    if args.poll_seconds <= 0 or args.stale_seconds <= 0:
-        parser.error("poll and stale intervals must be positive")
+    if args.poll_seconds <= 0 or args.stale_seconds <= 0 or args.start_samples < 1 or args.end_samples < 1 or not 0 <= args.end_score < args.start_score <= 100:
+        parser.error("invalid polling, stale, score, or consecutive-sample settings")
 
     api_key = read_api_key(args.api_key_file)
-    state = RadarState(Path(args.source), args.stale_seconds)
+    state = RadarState(Path(args.source), args.stale_seconds, args.start_score, args.end_score, args.start_samples, args.end_samples)
     state.update()
     stopped = threading.Event()
     worker = threading.Thread(target=poll, args=(state, args.poll_seconds, stopped), daemon=True)

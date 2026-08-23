@@ -3,6 +3,7 @@
 from typing import Final
 
 DOMAIN: Final = "wifi_radar"
+VERSION: Final = "0.2.0"
 
 CONF_BRIDGE_URL: Final = "bridge_url"
 CONF_API_KEY: Final = "api_key"

@@ -1,97 +1,109 @@
 # Wi-Fi Radar for Home Assistant
 
-Home Assistant custom integration for a local Wi-Fi RSSI radar bridge. It polls
-one authenticated JSON endpoint and exposes a passage candidate, RSSI,
-vibration score, bridge status, and the latest merged passage duration.
+A complete, privacy-first pipeline that measures Wi-Fi RSSI variation on a receiver, derives motion candidates, serves them through an authenticated local API, and registers them as Home Assistant entities.
 
-> This is a radio-path disturbance indicator, not a person-identification,
-> occupancy, life-safety, or certified security sensor. Doors, pets, moving
-> objects, interference, and Wi-Fi changes can produce similar signals.
+> This is a radio-path disturbance indicator, not person identification, certified occupancy, life-safety, or security equipment. Doors, pets, appliances, roaming, interference, and network changes can produce similar signals.
 
-## Requirements
-
-- Home Assistant with network access to the bridge
-- A Wi-Fi Radar bridge exposing `GET /api/v1/state`
-- An API key configured on that bridge
-
-Expected response:
-
-```json
-{
-  "available": true,
-  "source_updated_at": "2026-01-01T12:00:00+00:00",
-  "current": {
-    "rssi_dbm": -58,
-    "vibration_score": 79,
-    "motion_level": "high"
-  },
-  "passage": {
-    "active": true,
-    "last": {
-      "duration_seconds": 7.2
-    }
-  }
-}
-```
-
-The API key is sent as `Authorization: Bearer <API_KEY>`. Do not place
-credentials, SSID, BSSID, MAC addresses, or personal data in the response.
-
-## Installation with HACS
-
-1. In HACS, open **Integrations** and choose **Custom repositories**.
-2. Add your public repository URL and select the **Integration** category.
-3. Install **Wi-Fi Radar**.
-4. Restart Home Assistant.
-5. Go to **Settings → Devices & services → Add integration** and search for
-   **Wi-Fi Radar**.
-
-Public repository: `https://github.com/zaiming5429-cell/ha-wifi-radar`.
-
-## Manual installation
-
-Copy `custom_components/wifi_radar` into your Home Assistant configuration
-directory:
+## Architecture
 
 ```text
-<config>/custom_components/wifi_radar/
+Wi-Fi access point or router
+          ⇅ normal Wi-Fi link
+Windows, WSL2, or Linux receiver
+  collector/wifi_radar_collector.py
+          ↓ private runtime JSON
+  bridge/wifi_radar_bridge.py
+          ↓ authenticated local HTTP
+Home Assistant custom integration
 ```
 
-Restart Home Assistant, then add the integration from **Settings → Devices &
-services**.
+The router does not need a vendor cloud API. The receiving computer measures its own connected-link RSSI. A server connected only by Ethernet needs a compatible Wi-Fi receiver or a custom RSSI reader.
 
-## Configuration
+## Supported environments
 
-The setup form requests:
+- WSL2 using the Windows host Wi-Fi adapter (`netsh.exe`)
+- Native Windows Python (`netsh`)
+- Linux Wi-Fi adapters supported by `iw`
+- Other routers and receivers through a private custom executable that prints `rssi_dbm` JSON
 
-- **Bridge URL**: base URL such as `http://wifi-radar-bridge.local:8080`
-- **API key**: displayed as a password and never written to integration logs
-- **Name**: Home Assistant device name
-- **Scan interval**: 1–60 seconds; 2 seconds by default
+macOS and Ethernet-only systems are not automatically supported because they may not expose continuous RSSI. Use the custom adapter contract when a platform or router provides its own API.
 
-The URL must use HTTP or HTTPS and must not contain embedded credentials, a
-query string, or a fragment. Prefer HTTPS on untrusted networks and restrict the
-bridge to your local network.
+## End-to-end quick start
 
-## Entities
+Clone the repository on the receiver and run the hardware check:
 
-- Passage candidate binary sensor (`motion`)
-- RSSI sensor (`dBm`)
-- Vibration score sensor (`%`, 0–100 expected)
-- Status sensor (`calibrating`, `stable`, `watch`, `moving`, `stale`)
-- Last passage duration sensor (`s`)
+```bash
+git clone https://github.com/zaiming5429-cell/ha-wifi-radar.git
+cd ha-wifi-radar
+python3 collector/wifi_radar_collector.py --doctor
+```
 
-All entities share one coordinator request per interval. If polling fails, the
-entities become unavailable. The bridge URL and API key are redacted from Home
-Assistant diagnostics.
+Start collection. Runtime files are gitignored and created with mode `600`:
+
+```bash
+python3 collector/wifi_radar_collector.py \
+  --output runtime/wifi_radar.json \
+  --interval 1
+```
+
+In another terminal, generate a private API key with the secret manager available on your operating system, save only its value in `runtime/api_key`, and restrict the file to the service account. Then start the bridge:
+
+```bash
+python3 bridge/wifi_radar_bridge.py \
+  --source runtime/wifi_radar.json \
+  --api-key-file runtime/api_key \
+  --bind 0.0.0.0 \
+  --port 8765
+```
+
+Test locally without printing the key:
+
+```bash
+curl --fail --silent \
+  --header "Authorization: Bearer $(< runtime/api_key)" \
+  http://127.0.0.1:8765/health
+```
+
+Do not expose port 8765 through the internet or router port forwarding. WSL2 users should follow [the WSL2 deployment guide](docs/WSL2_DEPLOYMENT.md). Detailed collector options and the custom adapter contract are in [the collector guide](collector/README.md).
+
+## Home Assistant installation with HACS
+
+1. In HACS, open **Integrations** and choose **Custom repositories**.
+2. Add `https://github.com/zaiming5429-cell/ha-wifi-radar` as an **Integration**.
+3. Install **Wi-Fi Radar** and restart Home Assistant.
+4. Go to **Settings → Devices & services → Add integration → Wi-Fi Radar**.
+5. Enter the receiver LAN bridge URL and the private API key.
+
+For manual installation, copy `custom_components/wifi_radar` into `<config>/custom_components/wifi_radar` and restart Home Assistant.
+
+## Home Assistant entities
+
+- Passage candidate binary sensor
+- RSSI sensor in dBm
+- Vibration score from 0 to 100 percent
+- Status sensor: calibrating, stable, watch, moving, or stale
+- Latest merged passage duration in seconds
+
+The integration performs one authenticated request per interval. Credentials are password fields, never added to logs, and redacted from diagnostics.
+
+## How detection works
+
+The collector maintains a rolling baseline from the last 120 RSSI samples and combines instantaneous change, baseline deviation, and short-window volatility. The first 20 readings are calibration. A motion candidate requires consecutive elevated scores; the bridge merges those readings into a passage event.
+
+Placement and environment matter more than universal thresholds. Position the receiver so the monitored path lies between the access point and receiver, allow calibration while the area is quiet, and validate false positives before using automations.
 
 ## Privacy and security
 
-- Use a dedicated, randomly generated API key.
-- Do not expose the bridge directly to the public internet.
-- Do not commit real URLs, tokens, SSIDs, MAC addresses, or captured radio data.
-- Treat passage events as candidates and validate automations against real-world
-  false positives before enabling alerts.
+- No packets or user traffic are captured.
+- SSID, BSSID, MAC, IP address, router credentials, and HA credentials are not written to radar output.
+- Runtime JSON and API key files are excluded from Git and should remain mode `600`.
+- The API requires a Bearer key of at least 16 characters and compares it in constant time.
+- Restrict the bridge firewall rule to the HA host or trusted local subnet.
+- Never publish the API through DuckDNS or a router port-forward.
+
+## Validation
+
+GitHub Actions runs collector and bridge tests, a private-identifier scan, HACS validation, and Home Assistant hassfest validation on every push.
 
 ## License
 

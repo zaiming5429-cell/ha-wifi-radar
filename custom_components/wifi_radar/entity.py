@@ -6,7 +6,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .const import CONF_BRIDGE_URL, DOMAIN
+from .const import CONF_BRIDGE_URL, DOMAIN, VERSION
 from .coordinator import WifiRadarCoordinator
 
 
@@ -29,7 +29,7 @@ class WifiRadarEntity(CoordinatorEntity[WifiRadarCoordinator]):
             name=entry.title,
             manufacturer="Wi-Fi Radar",
             model="RSSI Passage Bridge",
-            sw_version="0.1.0",
+            sw_version=VERSION,
             configuration_url=entry.data[CONF_BRIDGE_URL],
         )
 

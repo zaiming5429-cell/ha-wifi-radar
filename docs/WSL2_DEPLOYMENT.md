@@ -19,13 +19,26 @@ stat -c '%a %n' /PATH/TO/PRIVATE_CONFIG/wifi-radar-api-key
 
 Expected mode: `600`.
 
-## 2. Run the bridge on the WSL2 interface
+## 2. Start the RSSI collector
+
+From the repository root, verify that WSL can read the Windows Wi-Fi link, then start collection:
+
+```bash
+python3 collector/wifi_radar_collector.py --doctor
+python3 collector/wifi_radar_collector.py \
+  --output /PATH/TO/PRIVATE_CONFIG/wifi_radar.json \
+  --interval 1
+```
+
+The receiver must be connected by Wi-Fi. No router password, SSID, BSSID, or MAC address is stored.
+
+## 3. Run the bridge on the WSL2 interface
 
 LAN access must be explicitly enabled with `--bind 0.0.0.0`. The source path is also explicit:
 
 ```bash
 python3 /PATH/TO/bridge/wifi_radar_bridge.py \
-  --source /PATH/TO/wifi_radar.json \
+  --source /PATH/TO/PRIVATE_CONFIG/wifi_radar.json \
   --api-key-file /PATH/TO/PRIVATE_CONFIG/wifi-radar-api-key \
   --bind 0.0.0.0 \
   --port 8765
@@ -39,7 +52,7 @@ curl --fail --silent \
   http://127.0.0.1:8765/health
 ```
 
-## 3. Optional PM2 service
+## 4. Optional PM2 service
 
 Use a local ecosystem file containing paths only. Keep the key itself out of the PM2 file and process arguments:
 
@@ -50,7 +63,7 @@ module.exports = {
     script: "/PATH/TO/bridge/wifi_radar_bridge.py",
     interpreter: "python3",
     args: [
-      "--source", "/PATH/TO/wifi_radar.json",
+      "--source", "/PATH/TO/PRIVATE_CONFIG/wifi_radar.json",
       "--api-key-file", "/PATH/TO/PRIVATE_CONFIG/wifi-radar-api-key",
       "--bind", "0.0.0.0",
       "--port", "8765"
@@ -68,24 +81,24 @@ pm2 start /PATH/TO/ecosystem.config.cjs
 pm2 status wifi-radar-ha-bridge
 ```
 
-## 4. Find the current WSL2 address
+## 5. Select the Windows-to-WSL target
 
-Run in WSL2 and map the result to `<WSL_IP>` in the commands below:
+First test from Windows PowerShell whether WSL localhost forwarding is active:
 
-```bash
-hostname -I
+```powershell
+Test-NetConnection -ComputerName 127.0.0.1 -Port 8765
 ```
 
-WSL2 NAT addresses can change after WSL or Windows restarts. Update the port proxy whenever `<WSL_IP>` changes.
+If it succeeds, use `127.0.0.1` as `<CONNECT_ADDRESS>`. This is stable across WSL address changes. Otherwise run `hostname -I` in WSL and use that address, noting that it may change after a restart.
 
-## 5. Configure Windows port forwarding
+## 6. Configure Windows port forwarding
 
 Open **Windows PowerShell as Administrator**. Replace placeholders before running the commands:
 
 ```powershell
 netsh interface portproxy add v4tov4 `
   listenaddress=<WINDOWS_LAN_IP> listenport=8765 `
-  connectaddress=<WSL_IP> connectport=8765
+  connectaddress=<CONNECT_ADDRESS> connectport=8765
 ```
 
 Confirm the mapping:
@@ -105,12 +118,12 @@ New-NetFirewallRule `
   -LocalAddress <WINDOWS_LAN_IP> `
   -LocalPort 8765 `
   -RemoteAddress <HA_SERVER_IP> `
-  -Profile Private
+  -Profile Any
 ```
 
 Do not use `Any` for `-RemoteAddress`, and do not create a router port-forwarding rule.
 
-## 6. Connectivity tests
+## 7. Connectivity tests
 
 On Windows, confirm that the forwarded listener is reachable:
 
@@ -128,7 +141,7 @@ curl --fail --silent \
 
 Use `http://<WINDOWS_LAN_IP>:8765/api/v1/state` for the sensor state. The bridge is intended only for the trusted local network link between `<HA_SERVER_IP>` and `<WINDOWS_LAN_IP>`.
 
-## 7. Update the port proxy after a WSL2 address change
+## 8. Update a WSL-IP-based proxy
 
 In Administrator PowerShell, delete the old mapping and add it again with the new `<WSL_IP>`:
 
@@ -138,12 +151,12 @@ netsh interface portproxy delete v4tov4 `
 
 netsh interface portproxy add v4tov4 `
   listenaddress=<WINDOWS_LAN_IP> listenport=8765 `
-  connectaddress=<WSL_IP> connectport=8765
+  connectaddress=<CONNECT_ADDRESS> connectport=8765
 ```
 
 The existing firewall rule remains limited to `<HA_SERVER_IP>`. Re-run `Test-NetConnection` after updating the proxy.
 
-## 8. Remove LAN exposure
+## 9. Remove LAN exposure
 
 In Administrator PowerShell:
 

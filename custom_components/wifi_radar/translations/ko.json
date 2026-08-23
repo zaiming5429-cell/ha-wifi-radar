@@ -18,7 +18,7 @@
         },
         "data_description": {
           "api_key": "Wi-Fi 레이더 브리지에 설정한 비밀 키입니다.",
-          "bridge_url": "기본 URL만 입력합니다. 예: http://wifi-radar-bridge.local:8080",
+          "bridge_url": "로컬 브리지의 기본 URL입니다.",
           "name": "Home Assistant에 표시할 장치 이름입니다.",
           "scan_interval": "초 단위 조회 주기입니다(1~60초)."
         },

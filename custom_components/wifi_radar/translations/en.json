@@ -18,7 +18,7 @@
         },
         "data_description": {
           "api_key": "Secret key configured on the Wi-Fi Radar bridge.",
-          "bridge_url": "Base URL only, for example http://wifi-radar-bridge.local:8080.",
+          "bridge_url": "Base URL of the local bridge.",
           "name": "Device name shown in Home Assistant.",
           "scan_interval": "Polling interval in seconds (1–60)."
         },

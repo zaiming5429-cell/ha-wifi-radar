@@ -1,0 +1,45 @@
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+.venv/
+venv/
+
+# Local configuration and credentials
+.env
+.env.*
+!.env.example
+secrets.yaml
+credentials.*
+*.key
+*.pem
+*.p12
+*.pfx
+*.crt
+
+# Runtime sensor data and local databases
+data/
+runtime/
+logs/
+*.log
+*.db
+*.sqlite
+*.sqlite3
+wifi_radar.json
+events.json
+
+# Home Assistant local state
+.storage/
+home-assistant_v2.db*
+known_devices.yaml
+
+# Tooling and editor files
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp

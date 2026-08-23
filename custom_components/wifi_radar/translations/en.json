@@ -1,0 +1,59 @@
+{
+  "config": {
+    "abort": {
+      "already_configured": "This Wi-Fi Radar bridge is already configured."
+    },
+    "error": {
+      "cannot_connect": "Unable to connect to the bridge.",
+      "invalid_auth": "The API key is invalid.",
+      "invalid_data": "The bridge address or response is invalid."
+    },
+    "step": {
+      "user": {
+        "data": {
+          "api_key": "API key",
+          "bridge_url": "Bridge URL",
+          "name": "Name",
+          "scan_interval": "Scan interval"
+        },
+        "data_description": {
+          "api_key": "Secret key configured on the Wi-Fi Radar bridge.",
+          "bridge_url": "Base URL only, for example http://wifi-radar-bridge.local:8080.",
+          "name": "Device name shown in Home Assistant.",
+          "scan_interval": "Polling interval in seconds (1–60)."
+        },
+        "description": "Connect to a local Wi-Fi Radar bridge. Credentials are stored by Home Assistant and redacted from diagnostics.",
+        "title": "Connect Wi-Fi Radar"
+      }
+    }
+  },
+  "entity": {
+    "binary_sensor": {
+      "passage": {
+        "name": "Passage candidate"
+      }
+    },
+    "sensor": {
+      "last_passage_duration": {
+        "name": "Last passage duration"
+      },
+      "rssi": {
+        "name": "RSSI"
+      },
+      "score": {
+        "name": "Vibration score"
+      },
+      "status": {
+        "name": "Status",
+        "state": {
+          "calibrating": "Calibrating",
+          "moving": "Moving",
+          "stable": "Stable",
+          "stale": "Stale",
+          "watch": "Watch"
+        }
+      }
+    }
+  },
+  "title": "Wi-Fi Radar"
+}

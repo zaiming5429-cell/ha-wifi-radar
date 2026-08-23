@@ -1,0 +1,59 @@
+{
+  "config": {
+    "abort": {
+      "already_configured": "이 Wi-Fi 레이더 브리지는 이미 설정되어 있습니다."
+    },
+    "error": {
+      "cannot_connect": "브리지에 연결할 수 없습니다.",
+      "invalid_auth": "API 키가 올바르지 않습니다.",
+      "invalid_data": "브리지 주소 또는 응답이 올바르지 않습니다."
+    },
+    "step": {
+      "user": {
+        "data": {
+          "api_key": "API 키",
+          "bridge_url": "브리지 URL",
+          "name": "이름",
+          "scan_interval": "조회 주기"
+        },
+        "data_description": {
+          "api_key": "Wi-Fi 레이더 브리지에 설정한 비밀 키입니다.",
+          "bridge_url": "기본 URL만 입력합니다. 예: http://wifi-radar-bridge.local:8080",
+          "name": "Home Assistant에 표시할 장치 이름입니다.",
+          "scan_interval": "초 단위 조회 주기입니다(1~60초)."
+        },
+        "description": "로컬 Wi-Fi 레이더 브리지에 연결합니다. 인증정보는 Home Assistant에 저장되며 진단정보에서는 마스킹됩니다.",
+        "title": "Wi-Fi 레이더 연결"
+      }
+    }
+  },
+  "entity": {
+    "binary_sensor": {
+      "passage": {
+        "name": "통행 후보"
+      }
+    },
+    "sensor": {
+      "last_passage_duration": {
+        "name": "최근 통행 지속시간"
+      },
+      "rssi": {
+        "name": "RSSI"
+      },
+      "score": {
+        "name": "진동 점수"
+      },
+      "status": {
+        "name": "상태",
+        "state": {
+          "calibrating": "보정 중",
+          "moving": "움직임",
+          "stable": "안정",
+          "stale": "데이터 지연",
+          "watch": "관찰"
+        }
+      }
+    }
+  },
+  "title": "Wi-Fi 레이더"
+}

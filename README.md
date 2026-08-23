@@ -46,7 +46,11 @@ python3 collector/wifi_radar_collector.py \
   --interval 1
 ```
 
-In another terminal, generate a private API key with the secret manager available on your operating system, save only its value in `runtime/api_key`, and restrict the file to the service account. Then start the bridge:
+In another terminal, generate a private API key. The helper stores it with mode `600` and does not print its value:
+
+```bash
+python3 tools/generate_api_key.py runtime/api_key
+``` Then start the bridge:
 
 ```bash
 python3 bridge/wifi_radar_bridge.py \

@@ -4,11 +4,10 @@ This guide exposes the Wi-Fi radar HTTP bridge from WSL2 NAT to one Home Assista
 
 ## 1. Create a protected API key file in WSL2
 
-Generate a long random value using your preferred secret-management method, save only the value in a local file, and restrict it to the service account:
+From the repository root, generate a long random key without printing it:
 
 ```bash
-install -d -m 700 /PATH/TO/PRIVATE_CONFIG
-chmod 600 /PATH/TO/PRIVATE_CONFIG/wifi-radar-api-key
+python3 tools/generate_api_key.py /PATH/TO/PRIVATE_CONFIG/wifi-radar-api-key
 ```
 
 The key file must not be committed. Verify its permissions without printing its contents:

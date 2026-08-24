@@ -27,6 +27,18 @@ class CollectorParsingTest(unittest.TestCase):
         _baseline, _score, _level, candidate = _score_reading(reading, previous)
         self.assertFalse(candidate)
 
+    def test_idle_step_change_is_rejected(self) -> None:
+        values = [-64, -64, -66, -66, -66, -64, -64]
+        previous = [{"rssi_dbm": value, "vibration_score": 80.0} for value in ([-64] * 20 + values)]
+        _baseline, _score, _level, candidate = _score_reading(WifiReading(-63.0, None, None, None, None, None), previous)
+        self.assertFalse(candidate)
+
+    def test_real_passage_waveform_is_retained(self) -> None:
+        values = [-57, -60, -60, -64, -64, -67, -67]
+        previous = [{"rssi_dbm": value, "vibration_score": 80.0} for value in ([-58] * 20 + values)]
+        _baseline, _score, _level, candidate = _score_reading(WifiReading(-63.0, None, None, None, None, None), previous)
+        self.assertTrue(candidate)
+
     @patch("wifi_radar_collector.datetime")
     def test_output_omits_network_identifiers(self, mocked_datetime: object) -> None:
         mocked_datetime.now.return_value.astimezone.return_value.isoformat.return_value = "2026-01-01T00:00:00+00:00"

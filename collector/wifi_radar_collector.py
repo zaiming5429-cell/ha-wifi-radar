@@ -263,11 +263,21 @@ def _score_reading(reading: WifiReading, previous: list[dict[str, Any]]) -> tupl
     else:
         level = "quiet"
 
+    motion_window = recent[-8:]
+    motion_span = max(motion_window) - min(motion_window) if motion_window else 0.0
+    motion_path = sum(abs(current - prior) for prior, current in zip(motion_window, motion_window[1:]))
+    structural_motion = motion_span >= 4.0 and motion_path >= 6.0
+
     previous_score = previous[-1].get("vibration_score") if previous else None
     previous_score_high = (
         isinstance(previous_score, (int, float)) and float(previous_score) >= 45.0
     )
-    motion_candidate = len(history) >= 20 and score >= 45.0 and previous_score_high
+    motion_candidate = (
+        len(history) >= 20
+        and score >= 45.0
+        and previous_score_high
+        and structural_motion
+    )
 
     baseline = {
         "mean_dbm": round(mean, 3),
@@ -383,7 +393,7 @@ def main() -> int:
             print(
                 f"{payload['updated_at']} rssi={current['rssi_dbm']:.1f}dBm "
                 f"score={current['vibration_score']:.1f} "
-                f"motion={current['motion_level']}",
+                f"motion={current['motion_level']} candidate={current['motion_candidate']}",
                 flush=True,
             )
         except (OSError, ValueError, RuntimeError, subprocess.TimeoutExpired, json.JSONDecodeError) as exc:

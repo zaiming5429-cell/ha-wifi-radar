@@ -91,7 +91,9 @@ class RadarState:
         baseline = data.get("baseline")
         baseline_mean = _number(baseline.get("mean_dbm"), rssi) if isinstance(baseline, dict) else rssi
 
-        self.high_streak = self.high_streak + 1 if score >= self.start_score else 0
+        candidate_value = sample.get("motion_candidate")
+        motion_confirmed = candidate_value if isinstance(candidate_value, bool) else True
+        self.high_streak = self.high_streak + 1 if score >= self.start_score and motion_confirmed else 0
         self.low_streak = self.low_streak + 1 if score < self.end_score else 0
 
         if self.active_passage is None and self.high_streak >= self.start_samples:

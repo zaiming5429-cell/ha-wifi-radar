@@ -29,7 +29,7 @@ python3 collector/wifi_radar_collector.py \
   --interval 1
 ```
 
-The first 20 samples calibrate the moving baseline. Walk through the radio path only after calibration.
+The first 20 samples calibrate the moving baseline. Walk through the radio path only after calibration. A candidate also requires at least 4 dB of span and 6 dB of cumulative movement in the recent eight-sample waveform; this rejects small driver/RF step changes that remain elevated for several seconds.
 
 ### Linux
 

@@ -92,7 +92,7 @@ The integration performs one authenticated request per interval. Credentials are
 
 ## How detection works
 
-The collector maintains a rolling baseline from the last 120 RSSI samples and combines instantaneous change, baseline deviation, and short-window volatility. The first 20 readings are calibration. A motion candidate requires consecutive elevated scores; the bridge merges those readings into a passage event.
+The collector maintains a rolling baseline from the last 120 RSSI samples and combines instantaneous change, baseline deviation, and short-window volatility. The first 20 readings are calibration. A motion candidate requires consecutive elevated scores plus a recent waveform span of at least 4 dB and cumulative movement of at least 6 dB. This suppresses small RSSI step changes that remain elevated for several seconds. The bridge merges only collector-confirmed readings into a passage event.
 
 Placement and environment matter more than universal thresholds. Position the receiver so the monitored path lies between the access point and receiver, allow calibration while the area is quiet, and validate false positives before using automations.
 

@@ -54,6 +54,17 @@ class RadarStateTest(unittest.TestCase):
         self.assertTrue(result["stale"])
         self.assertFalse(result["available"])
 
+    def test_unconfirmed_high_scores_do_not_start_passage(self) -> None:
+        rows = [
+            {**sample("2026-08-23T12:00:00+00:00", 95), "motion_candidate": False},
+            {**sample("2026-08-23T12:00:01+00:00", 80), "motion_candidate": False},
+            {**sample("2026-08-23T12:00:02+00:00", 70), "motion_candidate": False},
+        ]
+        self.write(rows)
+        self.state.update()
+        self.assertFalse(self.state.snapshot()["passage"]["active"])
+        self.assertEqual(self.state.snapshot()["passage"]["count_since_start"], 0)
+
     def test_reprocessing_same_samples_is_bounded(self) -> None:
         rows = [sample("2026-08-23T12:00:00+00:00", 50), sample("2026-08-23T12:00:01+00:00", 60)]
         self.write(rows)

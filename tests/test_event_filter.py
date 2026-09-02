@@ -62,6 +62,11 @@ class EventFilteredStateTest(unittest.TestCase):
         moving = replace(self.stable, score=80.0, status="moving", passage=True)
         self.assertIs(event_filtered_state(self.stable, moving), moving)
 
+    def test_active_passage_jitter_is_suppressed(self) -> None:
+        moving = replace(self.stable, score=80.0, status="moving", passage=True)
+        jitter = replace(moving, rssi=-59.0, score=92.0, updated_at="t1")
+        self.assertIs(event_filtered_state(moving, jitter), moving)
+
     def test_passage_end_is_published_once(self) -> None:
         moving = replace(self.stable, status="moving", passage=True)
         ended = replace(self.stable, last_passage_duration=9.5, updated_at="t2")

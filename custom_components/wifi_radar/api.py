@@ -56,7 +56,7 @@ def event_filtered_state(
         return current
     if current.status == "stale" or previous.status == "stale":
         return current
-    if current.passage or previous.passage:
+    if current.passage != previous.passage:
         return current
     if current.last_passage_duration != previous.last_passage_duration:
         return current

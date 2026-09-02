@@ -82,6 +82,10 @@ For manual installation, copy `custom_components/wifi_radar` into `<config>/cust
 
 ## Home Assistant entities
 
+The integration keeps polling the bridge for availability, but suppresses
+quiet RSSI/score jitter. Home Assistant entity updates are published when a
+passage starts, while it is active, and once when it ends.
+
 - Passage candidate binary sensor
 - RSSI sensor in dBm
 - Vibration score from 0 to 100 percent

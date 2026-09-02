@@ -41,6 +41,28 @@ class WifiRadarState:
     last_passage_duration: float | None
 
 
+def event_filtered_state(
+    previous: WifiRadarState | None,
+    current: WifiRadarState,
+) -> WifiRadarState:
+    """Publish only motion events and availability transitions.
+
+    The bridge is still polled for health, but quiet RSSI/score jitter must not
+    generate a new Home Assistant state every scan interval. A completed
+    passage is published once so the binary sensor can turn off and the final
+    duration can be recorded.
+    """
+    if previous is None:
+        return current
+    if current.status == "stale" or previous.status == "stale":
+        return current
+    if current.passage or previous.passage:
+        return current
+    if current.last_passage_duration != previous.last_passage_duration:
+        return current
+    return previous
+
+
 def normalize_bridge_url(value: str) -> str:
     """Validate and normalize an HTTP(S) bridge base URL."""
     candidate = value.strip().rstrip("/")

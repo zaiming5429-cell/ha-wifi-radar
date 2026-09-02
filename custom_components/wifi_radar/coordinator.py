@@ -8,7 +8,12 @@ import logging
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
-from .api import WifiRadarApiClient, WifiRadarApiError, WifiRadarState
+from .api import (
+    WifiRadarApiClient,
+    WifiRadarApiError,
+    WifiRadarState,
+    event_filtered_state,
+)
 from .const import DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
@@ -29,12 +34,16 @@ class WifiRadarCoordinator(DataUpdateCoordinator[WifiRadarState]):
             _LOGGER,
             name=DOMAIN,
             update_interval=timedelta(seconds=scan_interval),
+            always_update=False,
         )
         self.client = client
+        self._published_state: WifiRadarState | None = None
 
     async def _async_update_data(self) -> WifiRadarState:
         """Fetch the latest bridge snapshot."""
         try:
-            return await self.client.async_get_state()
+            current = await self.client.async_get_state()
         except WifiRadarApiError as err:
             raise UpdateFailed(str(err)) from err
+        self._published_state = event_filtered_state(self._published_state, current)
+        return self._published_state
